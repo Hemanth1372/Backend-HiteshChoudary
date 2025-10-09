@@ -16,7 +16,6 @@ const userRegister = asyncHandler(async (req, res) => {
   // return res
 
   const { username, email, fullname, password } = req.body;
-  console.log(req.body);
 
   if (
     [username, email, fullname, password].some((field) => field?.trim() === "")
@@ -24,7 +23,7 @@ const userRegister = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All fields are required");
   }
 
-  const checkUser = User.findOne({
+  const checkUser = await User.findOne({
     $or: [{ username }, { email }],
   });
 
@@ -33,19 +32,28 @@ const userRegister = asyncHandler(async (req, res) => {
   }
 
   const avatarLocalPath = req.files?.avatar[0].path;
-  const coverImageLocalPath = req.files?.coverImage[0].path;
+  // const coverImageLocalPath = req.files?.coverImage[0].path;
+
+  let coverImageLocalPath;
+  if (
+    req.files &&
+    Array.isArray(req.files.coverImage) &&
+    req.files.coverImage.length > 0
+  ) {
+    coverImageLocalPath = req.files.coverImage[0]?.path;
+  }
+
+  if (!avatarLocalPath) {
+    throw new ApiError(400, "Avatar is a required field");
+  }
 
   const avatar = await fileUploader(avatarLocalPath);
   const coverImage = await fileUploader(coverImageLocalPath);
 
-  if (!avatar) {
-    throw new ApiError(400, "Avatar is a required field");
-  }
-
   const user = await User.create({
     fullname,
-    avatar: avatar.url,
-    coverImage: coverImage?.url,
+    avatar: avatar.secure_url,
+    coverImage: coverImage?.secure_url,
     email,
     username: username.toLowerCase(),
     password,
