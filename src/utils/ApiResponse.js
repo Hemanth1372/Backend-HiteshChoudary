@@ -9,3 +9,5 @@ class ApiResponse {
     return this.success < 400;
   }
 }
+
+export { ApiResponse };
